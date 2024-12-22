@@ -197,7 +197,7 @@ const InstanceTable: React.FC<InstanceTableProps> = ({
         onChange={handleSearch}
         className="mb-4 p-2 border rounded"
       />
-      <Table>
+      <Table className="overflow-auto">
         <TableCaption>Lista de instancias gestionadas</TableCaption>
         <TableHeader>
           <TableRow>

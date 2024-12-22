@@ -91,7 +91,7 @@ const IndexPage = () => {
   return (
     <div className="w-full h-screen flex flex-col justify-start items-center p-4 bg-gradient-to-b from-gray-50 to-gray-100">
       <h1 className="text-4xl font-bold text-gray-800 mb-6">Gestión de Instancias</h1>
-      <div className="w-full max-w-4xl space-y-8 bg-white shadow-lg rounded-lg p-6">
+      <div className="w-full max-w-4xl space-y-8 bg-white shadow-lg rounded-lg p-6 overflow-auto">
         <InstanceForm refreshInstances={loadInstances} />
         {isLoading ? (
           <div className="text-center py-4">Cargando instancias...</div>
