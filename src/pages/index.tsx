@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import InstanceForm from "@/components/InstanceForm";
 import InstanceTable from "@/components/InstanceTable";
 import axiosInstance from "@/lib/axiosInstance";
@@ -10,9 +11,11 @@ interface Instance {
 }
 
 const IndexPage = () => {
+  const router = useRouter();
   const [instances, setInstances] = useState<Instance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Cargar las instancias de la API
   const loadInstances = async () => {
     setIsLoading(true);
     try {
@@ -22,7 +25,6 @@ const IndexPage = () => {
         status: item.instance.status,
         profilePictureUrl: item.instance.profilePictureUrl,
       }));
-
       setInstances(formattedData);
     } catch (error) {
       console.error("Error al cargar las instancias:", error);
@@ -31,10 +33,17 @@ const IndexPage = () => {
     }
   };
 
+  // Verificar si el usuario tiene un token válido al cargar la página
   useEffect(() => {
-    loadInstances();
-  }, []);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login"); // Redirigir a login si no hay token
+    } else {
+      loadInstances(); // Cargar las instancias si hay token
+    }
+  }, [router]);
 
+  // Funciones para manejar operaciones CRUD
   const handleDelete = async (name: string) => {
     try {
       await axiosInstance.delete(`/instance/delete/${name}`);
@@ -43,7 +52,7 @@ const IndexPage = () => {
       console.error(`Error al eliminar la instancia ${name}:`, error);
     }
   };
-  
+
   const handleConnect = async (name: string) => {
     try {
       const { data } = await axiosInstance.post(`/instance/connect/${name}`);
@@ -52,7 +61,6 @@ const IndexPage = () => {
       console.error(`Error al conectar la instancia ${name}:`, error);
     }
   };
-  
 
   const handleLogout = async (name: string) => {
     try {
@@ -93,7 +101,7 @@ const IndexPage = () => {
             onDelete={handleDelete}
             onConnect={handleConnect}
             onLogout={handleLogout}
-            onCheckState={handleCheckState}
+            refreshInstances={loadInstances}
           />
         )}
       </div>

@@ -1,4 +1,4 @@
-import { Home, PlusCircle, List, Settings } from "lucide-react";
+import { Home, PlusCircle, List, Settings, User } from "lucide-react";
 
 import {
   Sidebar,
@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
+
 // Configuración de las rutas del sidebar
 const menuItems = [
   {
@@ -19,14 +20,9 @@ const menuItems = [
     icon: Home,
   },
   {
-    title: "Crear Instancia",
-    url: "/create-instance",
-    icon: PlusCircle,
-  },
-  {
-    title: "Ver Instancias",
-    url: "/instances",
-    icon: List,
+    title: "Registro",
+    url: "/register",
+    icon: User,
   },
   {
     title: "Configuración",
