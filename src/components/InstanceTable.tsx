@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react"; // Usamos qrcode.react
 import { useToast } from "@/hooks/use-toast";
 import { useDrag, useDrop } from "react-dnd"; // Importamos de react-dnd
 import {
@@ -24,7 +24,7 @@ interface Instance {
 interface InstanceTableProps {
   instances: Instance[];
   onDelete: (name: string) => Promise<void>;
-  onConnect: (name: string) => Promise<{ qrCode?: string } | void>;
+  onConnect: (name: string, phoneNumber: string) => Promise<{ code?: string } | void>;
   onLogout: (name: string) => Promise<void>;
   refreshInstances: () => void;
 }
@@ -37,10 +37,43 @@ const InstanceTable: React.FC<InstanceTableProps> = ({
   refreshInstances,
 }) => {
   const [loadingInstance, setLoadingInstance] = useState<string | null>(null);
-  const [qrCodes, setQrCodes] = useState<{ [key: string]: string | undefined }>({});
-  const [intervals, setIntervals] = useState<{ [key: string]: NodeJS.Timeout }>({});
+  const [qrCodes, setQrCodes] = useState<{ [key: string]: string | undefined }>({}); // Para almacenar los QR
+  const [isGeneratingQR, setIsGeneratingQR] = useState<boolean>(false); // Estado para controlar la generación del QR
   const [filteredInstances, setFilteredInstances] = useState<Instance[]>(instances);
   const { toast } = useToast();
+
+  // Función para conectar la instancia y generar el QR
+  const handleConnectInstance = async (instanceName: string, phoneNumber: string) => {
+    setIsGeneratingQR(true);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/instance/connect/${instanceName}?number=${phoneNumber}`,
+        { method: "GET", headers: { apikey: "mude-me" } }
+      );
+
+      const data = await response.json();
+      if (data.code) setQrCodes((prev) => ({ ...prev, [instanceName]: data.code }));
+
+      // Verificamos la conexión
+      const checkConnection = setInterval(async () => {
+        const stateResponse = await fetch(
+          `http://localhost:8080/instance/connectionState/${instanceName}`,
+          { method: "GET", headers: { apikey: "mude-me" } }
+        );
+        const stateData = await stateResponse.json();
+        if (stateData?.instance?.state === "open") {
+          clearInterval(checkConnection);
+          toast({ title: "Conexión exitosa", description: "Instancia conectada con éxito" });
+          refreshInstances();
+        }
+      }, 5000);
+    } catch (error) {
+      toast({ title: "Error", description: "Error al conectar instancia", variant: "destructive" });
+      console.error(error);
+    } finally {
+      setIsGeneratingQR(false);
+    }
+  };
 
   // Función de drag and drop
   const moveRow = (draggedIndex: number, targetIndex: number) => {
@@ -115,20 +148,18 @@ const InstanceTable: React.FC<InstanceTableProps> = ({
         </TableCell>
         <TableCell>
           {qrCodes[instance.name] ? (
-            <QRCodeSVG value={qrCodes[instance.name] as string} size={100} />
+            <QRCodeSVG value={qrCodes[instance.name] as string} size={150} />
           ) : (
-            <p>{instance.status === "open" ? "Conectada" : "Sin QR"}</p>
+            <Button
+              onClick={() => handleConnectInstance(instance.name, "123456789")} // Aquí se pasa un número de teléfono ficticio
+              disabled={isGeneratingQR || loadingInstance === instance.name}
+              className="w-full"
+            >
+              {isGeneratingQR && loadingInstance === instance.name ? "Generando QR..." : "Generar QR"}
+            </Button>
           )}
         </TableCell>
         <TableCell className="flex items-center justify-center space-x-2">
-          <Button
-            onClick={() => onConnect(instance.name)}
-            disabled={instance.status === "open" || loadingInstance === instance.name}
-          >
-            {loadingInstance === instance.name && instance.status !== "open"
-              ? "Conectando..."
-              : "Conectar"}
-          </Button>
           <Button
             onClick={() => onLogout(instance.name)}
             disabled={instance.status === "close" || loadingInstance === instance.name}
@@ -173,7 +204,7 @@ const InstanceTable: React.FC<InstanceTableProps> = ({
             <TableHead>Avatar</TableHead>
             <TableHead>Nombre</TableHead>
             <TableHead>Estado</TableHead>
-            <TableHead>Código QR</TableHead>
+            <TableHead>QR</TableHead> {/* Nueva columna para el QR */}
             <TableHead className="text-center">Acciones</TableHead>
           </TableRow>
         </TableHeader>

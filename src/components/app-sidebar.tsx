@@ -25,6 +25,11 @@ const menuItems = [
     icon: User,
   },
   {
+    title: "Iniciar Sesion",
+    url: "/login",
+    icon: User,
+  },
+  {
     title: "Configuración",
     url: "/settings",
     icon: Settings,
